@@ -1,0 +1,14 @@
+anchor_version = "0.13.2"
+
+[workspace]
+members = [
+    "token-lending/program",
+    "token/program",
+]
+
+[provider]
+cluster = "mainnet"
+wallet = "zzzzkeys/prod_temp_program_authority.json"
+
+[programs.mainnet]
+spl_token_lending = "So1endDq2YkqhipRh3WViPa8hdiSpxWy6z3Z6tMCpAo"
