@@ -8,7 +8,7 @@ members = [
 
 [provider]
 cluster = "mainnet"
-wallet = "zzzzkeys/prod_temp_program_authority.json"
+wallet = "~/.config/solana/id.json"
 
 [programs.mainnet]
 spl_token_lending = "So1endDq2YkqhipRh3WViPa8hdiSpxWy6z3Z6tMCpAo"
