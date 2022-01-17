@@ -1710,6 +1710,10 @@ fn process_liquidate_obligation(
         .liquidity
         .accumulated_protocol_fees
         .try_add(Decimal::from(protocol_fee_amount))?;
+    Reserve::pack(
+        withdraw_reserve,
+        &mut withdraw_reserve_info.data.borrow_mut(),
+    )?;
 
     spl_token_transfer(TokenTransferParams {
         source: source_liquidity_info.clone(),
