@@ -1032,11 +1032,7 @@ fn process_deposit_reserve_liquidity_and_obligation_collateral(
     let clock = &Clock::from_account_info(next_account_info(account_info_iter)?)?;
     let token_program_id = next_account_info(account_info_iter)?;
 
-    _refresh_reserve_lite(
-        program_id,
-        reserve_info,
-        clock,
-    )?;
+    _refresh_reserve_lite(program_id, reserve_info, clock)?;
     let collateral_amount = _deposit_reserve_liquidity(
         program_id,
         liquidity_amount,
@@ -1051,11 +1047,7 @@ fn process_deposit_reserve_liquidity_and_obligation_collateral(
         clock,
         token_program_id,
     )?;
-    _refresh_reserve_lite(
-        program_id,
-        reserve_info,
-        clock,
-    )?;
+    _refresh_reserve_lite(program_id, reserve_info, clock)?;
     _deposit_obligation_collateral(
         program_id,
         collateral_amount,
