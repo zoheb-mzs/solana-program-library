@@ -1069,6 +1069,11 @@ fn process_deposit_reserve_liquidity_and_obligation_collateral(
         clock,
         token_program_id,
     )?;
+    // mark the reserve as stale to make sure no weird bugs happen
+    let mut reserve = Reserve::unpack(&reserve_info.data.borrow())?;
+    reserve.last_update.mark_stale();
+    Reserve::pack(reserve, &mut reserve_info.data.borrow_mut())?;
+
     Ok(())
 }
 
