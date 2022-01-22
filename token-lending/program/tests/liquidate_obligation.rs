@@ -6,7 +6,7 @@ use helpers::*;
 use solana_program_test::*;
 use solana_sdk::{
     pubkey::Pubkey,
-    signature::{Keypair, Signer},
+    signature::{read_keypair_file, Keypair, Signer},
     transaction::Transaction,
 };
 use spl_token::instruction::approve;
@@ -40,7 +40,8 @@ async fn test_success() {
     const USDC_RESERVE_LIQUIDITY_FRACTIONAL: u64 = 2 * USDC_BORROW_AMOUNT_FRACTIONAL;
 
     let user_accounts_owner = Keypair::new();
-    let user_transfer_authority = Keypair::new();
+    let user_transfer_authority =
+            read_keypair_file("tests/fixtures/lending_market_owner.json").unwrap();
     let lending_market = add_lending_market(&mut test);
 
     let mut reserve_config = test_reserve_config();
