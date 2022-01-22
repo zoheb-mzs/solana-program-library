@@ -419,6 +419,26 @@ fn _refresh_reserve<'a>(
     Ok(())
 }
 
+/// Lite version of refresh_reserve that should be used when the oracle price doesn't need to be updated
+/// BE CAREFUL WHEN USING THIS
+fn _refresh_reserve_lite<'a>(
+    program_id: &Pubkey,
+    reserve_info: &AccountInfo<'a>,
+    clock: &Clock,
+) -> ProgramResult {
+    let mut reserve = Reserve::unpack(&reserve_info.data.borrow())?;
+    if reserve_info.owner != program_id {
+        msg!("Reserve provided is not owned by the lending program");
+        return Err(LendingError::InvalidAccountOwner.into());
+    }
+
+    reserve.accrue_interest(clock.slot)?;
+    reserve.last_update.update_slot(clock.slot);
+    Reserve::pack(reserve, &mut reserve_info.data.borrow_mut())?;
+
+    Ok(())
+}
+
 fn process_deposit_reserve_liquidity(
     program_id: &Pubkey,
     liquidity_amount: u64,
@@ -1006,12 +1026,17 @@ fn process_deposit_reserve_liquidity_and_obligation_collateral(
     let destination_collateral_info = next_account_info(account_info_iter)?;
     let obligation_info = next_account_info(account_info_iter)?;
     let obligation_owner_info = next_account_info(account_info_iter)?;
-    let pyth_price_info = next_account_info(account_info_iter)?;
-    let switchboard_feed_info = next_account_info(account_info_iter)?;
+    let _pyth_price_info = next_account_info(account_info_iter)?;
+    let _switchboard_feed_info = next_account_info(account_info_iter)?;
     let user_transfer_authority_info = next_account_info(account_info_iter)?;
     let clock = &Clock::from_account_info(next_account_info(account_info_iter)?)?;
     let token_program_id = next_account_info(account_info_iter)?;
 
+    _refresh_reserve_lite(
+        program_id,
+        reserve_info,
+        clock,
+    )?;
     let collateral_amount = _deposit_reserve_liquidity(
         program_id,
         liquidity_amount,
@@ -1026,11 +1051,9 @@ fn process_deposit_reserve_liquidity_and_obligation_collateral(
         clock,
         token_program_id,
     )?;
-    _refresh_reserve(
+    _refresh_reserve_lite(
         program_id,
         reserve_info,
-        pyth_price_info,
-        switchboard_feed_info,
         clock,
     )?;
     _deposit_obligation_collateral(
