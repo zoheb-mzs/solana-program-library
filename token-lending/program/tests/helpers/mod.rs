@@ -647,11 +647,7 @@ impl TestLendingMarket {
 
         let recent_blockhash = banks_client.get_recent_blockhash().await.unwrap();
         transaction.sign(
-            &[
-                payer,
-                user_accounts_owner,
-                &user_transfer_authority,
-            ],
+            &[payer, user_accounts_owner, &user_transfer_authority],
             recent_blockhash,
         );
 

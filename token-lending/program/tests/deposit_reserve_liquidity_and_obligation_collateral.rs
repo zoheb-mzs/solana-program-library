@@ -55,7 +55,6 @@ async fn test_success() {
     // let initial_user_collateral_balance =
     //     get_token_balance(&mut banks_client, usdc_test_reserve.user_collateral_pubkey).await;
 
-
     lending_market
         .deposit_obligation_and_collateral(
             &mut banks_client,
@@ -66,4 +65,7 @@ async fn test_success() {
             100 * FRACTIONAL_TO_USDC,
         )
         .await;
+
+    let usdc_reserve = usdc_test_reserve.get_state(&mut banks_client).await;
+    assert_eq!(usdc_reserve.last_update.stale, true);
 }

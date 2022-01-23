@@ -413,7 +413,6 @@ fn _refresh_reserve<'a>(
     reserve.liquidity.market_price = get_price(switchboard_feed_info, pyth_price_info, clock)?;
     Reserve::pack(reserve, &mut reserve_info.data.borrow_mut())?;
 
-
     _refresh_reserve_interest(program_id, reserve_info, clock)
 }
 
