@@ -986,7 +986,6 @@ fn _deposit_obligation_collateral<'a>(
         .deposit(collateral_amount)?;
     obligation.last_update.mark_stale();
     Obligation::pack(obligation, &mut obligation_info.data.borrow_mut())?;
-    msg!("aaaaaa");
     spl_token_transfer(TokenTransferParams {
         source: source_collateral_info.clone(),
         destination: destination_collateral_info.clone(),
@@ -995,8 +994,6 @@ fn _deposit_obligation_collateral<'a>(
         authority_signer_seeds: &[],
         token_program: token_program_id.clone(),
     })?;
-    msg!("aaa3aaa");
-
     Ok(())
 }
 
@@ -1458,8 +1455,6 @@ fn process_repay_obligation_liquidity(
     let user_transfer_authority_info = next_account_info(account_info_iter)?;
     let clock = &Clock::from_account_info(next_account_info(account_info_iter)?)?;
     let token_program_id = next_account_info(account_info_iter)?;
-
-    _refresh_reserve_interest(program_id, repay_reserve_info, clock)?;
 
     let lending_market = LendingMarket::unpack(&lending_market_info.data.borrow())?;
     if lending_market_info.owner != program_id {
