@@ -125,6 +125,10 @@ pub fn process_instruction(
             msg!("Instruction: UpdateReserveConfig");
             process_update_reserve_config(program_id, config, accounts)
         }
+        LendingInstruction::OraclelessRepayObligationLiquidity { liquidity_amount } => {
+            msg!("Instruction: OraclelessRepayObligationLiquidity");
+            process_oracleless_repay_obligation_liquidity(program_id, liquidity_amount, accounts)
+        }
     }
 }
 
@@ -1538,6 +1542,130 @@ fn process_repay_obligation_liquidity(
 
     Ok(())
 }
+
+#[inline(never)] // avoid stack frame limit
+fn process_oracleless_repay_obligation_liquidity(
+    program_id: &Pubkey,
+    liquidity_amount: u64,
+    accounts: &[AccountInfo],
+) -> ProgramResult {
+    if liquidity_amount == 0 {
+        msg!("Liquidity amount provided cannot be zero");
+        return Err(LendingError::InvalidAmount.into());
+    }
+    let account_info_iter = &mut accounts.iter();
+    let source_liquidity_info = next_account_info(account_info_iter)?;
+    let destination_liquidity_info = next_account_info(account_info_iter)?;
+    let repay_reserve_info = next_account_info(account_info_iter)?;
+    let obligation_info = next_account_info(account_info_iter)?;
+    let lending_market_info = next_account_info(account_info_iter)?;
+    let user_transfer_authority_info = next_account_info(account_info_iter)?;
+    let clock = &Clock::from_account_info(next_account_info(account_info_iter)?)?;
+    let token_program_id = next_account_info(account_info_iter)?;
+
+    let lending_market = LendingMarket::unpack(&lending_market_info.data.borrow())?;
+    if lending_market_info.owner != program_id {
+        msg!("Lending market provided is not owned by the lending program");
+        return Err(LendingError::InvalidAccountOwner.into());
+    }
+    if &lending_market.token_program_id != token_program_id.key {
+        msg!("Lending market token program does not match the token program provided");
+        return Err(LendingError::InvalidTokenProgram.into());
+    }
+
+    let mut obligation = Obligation::unpack(&obligation_info.data.borrow())?;
+    if obligation_info.owner != program_id {
+        msg!("Obligation provided is not owned by the lending program");
+        return Err(LendingError::InvalidAccountOwner.into());
+    }
+    if &obligation.lending_market != lending_market_info.key {
+        msg!("Obligation lending market does not match the lending market provided");
+        return Err(LendingError::InvalidAccountInput.into());
+    }
+
+    for (index, liquidity) in obligation.borrows.iter_mut().enumerate() {
+        let borrow_reserve_info = next_account_info(account_info_iter)?;
+        if borrow_reserve_info.owner != program_id {
+            msg!(
+                "Borrow reserve provided for liquidity {} is not owned by the lending program",
+                index
+            );
+            return Err(LendingError::InvalidAccountOwner.into());
+        }
+        if liquidity.borrow_reserve != *borrow_reserve_info.key {
+            msg!(
+                "Borrow reserve of liquidity {} does not match the borrow reserve provided",
+                index
+            );
+            return Err(LendingError::InvalidAccountInput.into());
+        }
+
+        _refresh_reserve_interest(program_id,borrow_reserve_info,clock)?;
+        let mut borrow_reserve = Reserve::unpack(&borrow_reserve_info.data.borrow())?;
+        liquidity.accrue_interest(borrow_reserve.liquidity.cumulative_borrow_rate_wads)?;
+        borrow_reserve.last_update.mark_stale();
+        Reserve::pack(borrow_reserve, &mut borrow_reserve_info.data.borrow_mut())?;
+    }
+
+    _refresh_reserve_interest(program_id,repay_reserve_info,clock)?;
+    let mut repay_reserve = Reserve::unpack(&repay_reserve_info.data.borrow())?;
+    if repay_reserve_info.owner != program_id {
+        msg!("Repay reserve provided is not owned by the lending program");
+        return Err(LendingError::InvalidAccountOwner.into());
+    }
+    if &repay_reserve.lending_market != lending_market_info.key {
+        msg!("Repay reserve lending market does not match the lending market provided");
+        return Err(LendingError::InvalidAccountInput.into());
+    }
+    if &repay_reserve.liquidity.supply_pubkey == source_liquidity_info.key {
+        msg!("Repay reserve liquidity supply cannot be used as the source liquidity provided");
+        return Err(LendingError::InvalidAccountInput.into());
+    }
+    if &repay_reserve.liquidity.supply_pubkey != destination_liquidity_info.key {
+        msg!("Repay reserve liquidity supply must be used as the destination liquidity provided");
+        return Err(LendingError::InvalidAccountInput.into());
+    }
+    if repay_reserve.last_update.is_stale(clock.slot)? {
+        msg!("Repay reserve is stale and must be refreshed in the current slot");
+        return Err(LendingError::ReserveStale.into());
+    }
+    let (liquidity, liquidity_index) =
+        obligation.find_liquidity_in_borrows(*repay_reserve_info.key)?;
+    if liquidity.borrowed_amount_wads == Decimal::zero() {
+        msg!("Liquidity borrowed amount is zero");
+        return Err(LendingError::ObligationLiquidityEmpty.into());
+    }
+
+    let CalculateRepayResult {
+        settle_amount,
+        repay_amount,
+    } = repay_reserve.calculate_repay(liquidity_amount, liquidity.borrowed_amount_wads)?;
+
+    if repay_amount == 0 {
+        msg!("Repay amount is too small to transfer liquidity");
+        return Err(LendingError::RepayTooSmall.into());
+    }
+
+    repay_reserve.liquidity.repay(repay_amount, settle_amount)?;
+    repay_reserve.last_update.mark_stale();
+    Reserve::pack(repay_reserve, &mut repay_reserve_info.data.borrow_mut())?;
+
+    obligation.repay(settle_amount, liquidity_index)?;
+    obligation.last_update.mark_stale();
+    Obligation::pack(obligation, &mut obligation_info.data.borrow_mut())?;
+
+    spl_token_transfer(TokenTransferParams {
+        source: source_liquidity_info.clone(),
+        destination: destination_liquidity_info.clone(),
+        amount: repay_amount,
+        authority: user_transfer_authority_info.clone(),
+        authority_signer_seeds: &[],
+        token_program: token_program_id.clone(),
+    })?;
+
+    Ok(())
+}
+
 
 #[inline(never)] // avoid stack frame limit
 fn process_liquidate_obligation(
