@@ -1266,9 +1266,9 @@ pub fn oracleless_repay_obligation_liquidity(
         AccountMeta::new_readonly(spl_token::id(), false),
     ];
     accounts.extend(
-    reserve_pubkeys
-        .into_iter()
-        .map(|pubkey| AccountMeta::new_readonly(pubkey, false)),
+        reserve_pubkeys
+            .into_iter()
+            .map(|pubkey| AccountMeta::new_readonly(pubkey, false)),
     );
     Instruction {
         program_id,

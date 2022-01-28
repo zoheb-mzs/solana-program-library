@@ -1600,14 +1600,14 @@ fn process_oracleless_repay_obligation_liquidity(
             return Err(LendingError::InvalidAccountInput.into());
         }
 
-        _refresh_reserve_interest(program_id,borrow_reserve_info,clock)?;
+        _refresh_reserve_interest(program_id, borrow_reserve_info, clock)?;
         let mut borrow_reserve = Reserve::unpack(&borrow_reserve_info.data.borrow())?;
         liquidity.accrue_interest(borrow_reserve.liquidity.cumulative_borrow_rate_wads)?;
         borrow_reserve.last_update.mark_stale();
         Reserve::pack(borrow_reserve, &mut borrow_reserve_info.data.borrow_mut())?;
     }
 
-    _refresh_reserve_interest(program_id,repay_reserve_info,clock)?;
+    _refresh_reserve_interest(program_id, repay_reserve_info, clock)?;
     let mut repay_reserve = Reserve::unpack(&repay_reserve_info.data.borrow())?;
     if repay_reserve_info.owner != program_id {
         msg!("Repay reserve provided is not owned by the lending program");
@@ -1665,7 +1665,6 @@ fn process_oracleless_repay_obligation_liquidity(
 
     Ok(())
 }
-
 
 #[inline(never)] // avoid stack frame limit
 fn process_liquidate_obligation(
