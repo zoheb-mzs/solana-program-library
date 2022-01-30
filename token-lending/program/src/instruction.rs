@@ -896,9 +896,7 @@ pub fn refresh_obligation(
     obligation_pubkey: Pubkey,
     reserve_pubkeys: Vec<Pubkey>,
 ) -> Instruction {
-    let mut accounts = vec![
-        AccountMeta::new(obligation_pubkey, false),
-    ];
+    let mut accounts = vec![AccountMeta::new(obligation_pubkey, false)];
     accounts.extend(
         reserve_pubkeys
             .into_iter()
