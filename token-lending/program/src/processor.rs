@@ -218,7 +218,7 @@ fn process_init_reserve(
     let lending_market_authority_info = next_account_info(account_info_iter)?;
     let lending_market_owner_info = next_account_info(account_info_iter)?;
     let user_transfer_authority_info = next_account_info(account_info_iter)?;
-    let clock = &Clock::from_account_info(next_account_info(account_info_iter)?)?;
+    let clock = &Clock::get()?;
     let rent_info = next_account_info(account_info_iter)?;
     let rent = &Rent::from_account_info(rent_info)?;
     let token_program_id = next_account_info(account_info_iter)?;
@@ -378,7 +378,7 @@ fn process_refresh_reserve(program_id: &Pubkey, accounts: &[AccountInfo]) -> Pro
     let reserve_info = next_account_info(account_info_iter)?;
     let pyth_price_info = next_account_info(account_info_iter)?;
     let switchboard_feed_info = next_account_info(account_info_iter)?;
-    let clock = &Clock::from_account_info(next_account_info(account_info_iter)?)?;
+    let clock = &Clock::get()?;
     _refresh_reserve(
         program_id,
         reserve_info,
@@ -438,7 +438,7 @@ fn process_deposit_reserve_liquidity(
     let lending_market_info = next_account_info(account_info_iter)?;
     let lending_market_authority_info = next_account_info(account_info_iter)?;
     let user_transfer_authority_info = next_account_info(account_info_iter)?;
-    let clock = &Clock::from_account_info(next_account_info(account_info_iter)?)?;
+    let clock = &Clock::get()?;
     let token_program_id = next_account_info(account_info_iter)?;
 
     // We don't care about the return value here, so just ignore it.
@@ -582,7 +582,7 @@ fn process_redeem_reserve_collateral(
     let lending_market_info = next_account_info(account_info_iter)?;
     let lending_market_authority_info = next_account_info(account_info_iter)?;
     let user_transfer_authority_info = next_account_info(account_info_iter)?;
-    let clock = &Clock::from_account_info(next_account_info(account_info_iter)?)?;
+    let clock = &Clock::get()?;
     let token_program_id = next_account_info(account_info_iter)?;
     _redeem_reserve_collateral(
         program_id,
@@ -699,7 +699,7 @@ fn process_init_obligation(program_id: &Pubkey, accounts: &[AccountInfo]) -> Pro
     let obligation_info = next_account_info(account_info_iter)?;
     let lending_market_info = next_account_info(account_info_iter)?;
     let obligation_owner_info = next_account_info(account_info_iter)?;
-    let clock = &Clock::from_account_info(next_account_info(account_info_iter)?)?;
+    let clock = &Clock::get()?;
     let rent = &Rent::from_account_info(next_account_info(account_info_iter)?)?;
     let token_program_id = next_account_info(account_info_iter)?;
 
@@ -740,7 +740,7 @@ fn process_init_obligation(program_id: &Pubkey, accounts: &[AccountInfo]) -> Pro
 fn process_refresh_obligation(program_id: &Pubkey, accounts: &[AccountInfo]) -> ProgramResult {
     let account_info_iter = &mut accounts.iter().peekable();
     let obligation_info = next_account_info(account_info_iter)?;
-    let clock = &Clock::from_account_info(next_account_info(account_info_iter)?)?;
+    let clock = &Clock::get()?;
 
     let mut obligation = Obligation::unpack(&obligation_info.data.borrow())?;
     if obligation_info.owner != program_id {
@@ -879,7 +879,7 @@ fn process_deposit_obligation_collateral(
     let lending_market_info = next_account_info(account_info_iter)?;
     let obligation_owner_info = next_account_info(account_info_iter)?;
     let user_transfer_authority_info = next_account_info(account_info_iter)?;
-    let clock = &Clock::from_account_info(next_account_info(account_info_iter)?)?;
+    let clock = &Clock::get()?;
     let token_program_id = next_account_info(account_info_iter)?;
     _deposit_obligation_collateral(
         program_id,
@@ -1009,7 +1009,7 @@ fn process_deposit_reserve_liquidity_and_obligation_collateral(
     let pyth_price_info = next_account_info(account_info_iter)?;
     let switchboard_feed_info = next_account_info(account_info_iter)?;
     let user_transfer_authority_info = next_account_info(account_info_iter)?;
-    let clock = &Clock::from_account_info(next_account_info(account_info_iter)?)?;
+    let clock = &Clock::get()?;
     let token_program_id = next_account_info(account_info_iter)?;
 
     let collateral_amount = _deposit_reserve_liquidity(
@@ -1068,7 +1068,7 @@ fn process_withdraw_obligation_collateral(
     let lending_market_info = next_account_info(account_info_iter)?;
     let lending_market_authority_info = next_account_info(account_info_iter)?;
     let obligation_owner_info = next_account_info(account_info_iter)?;
-    let clock = &Clock::from_account_info(next_account_info(account_info_iter)?)?;
+    let clock = &Clock::get()?;
     let token_program_id = next_account_info(account_info_iter)?;
     _withdraw_obligation_collateral(
         program_id,
@@ -1251,7 +1251,7 @@ fn process_borrow_obligation_liquidity(
     let lending_market_info = next_account_info(account_info_iter)?;
     let lending_market_authority_info = next_account_info(account_info_iter)?;
     let obligation_owner_info = next_account_info(account_info_iter)?;
-    let clock = &Clock::from_account_info(next_account_info(account_info_iter)?)?;
+    let clock = &Clock::get()?;
     let token_program_id = next_account_info(account_info_iter)?;
 
     let lending_market = LendingMarket::unpack(&lending_market_info.data.borrow())?;
@@ -1440,7 +1440,7 @@ fn process_repay_obligation_liquidity(
     let obligation_info = next_account_info(account_info_iter)?;
     let lending_market_info = next_account_info(account_info_iter)?;
     let user_transfer_authority_info = next_account_info(account_info_iter)?;
-    let clock = &Clock::from_account_info(next_account_info(account_info_iter)?)?;
+    let clock = &Clock::get()?;
     let token_program_id = next_account_info(account_info_iter)?;
 
     let lending_market = LendingMarket::unpack(&lending_market_info.data.borrow())?;
@@ -1548,7 +1548,7 @@ fn process_liquidate_obligation(
     let lending_market_info = next_account_info(account_info_iter)?;
     let lending_market_authority_info = next_account_info(account_info_iter)?;
     let user_transfer_authority_info = next_account_info(account_info_iter)?;
-    let clock = &Clock::from_account_info(next_account_info(account_info_iter)?)?;
+    let clock = &Clock::get()?;
     let token_program_id = next_account_info(account_info_iter)?;
 
     let lending_market = LendingMarket::unpack(&lending_market_info.data.borrow())?;
@@ -1915,7 +1915,7 @@ fn process_withdraw_obligation_collateral_and_redeem_reserve_liquidity(
     let reserve_liquidity_supply_info = next_account_info(account_info_iter)?;
     let obligation_owner_info = next_account_info(account_info_iter)?;
     let user_transfer_authority_info = next_account_info(account_info_iter)?;
-    let clock = &Clock::from_account_info(next_account_info(account_info_iter)?)?;
+    let clock = &Clock::get()?;
     let token_program_id = next_account_info(account_info_iter)?;
 
     let liquidity_amount = _withdraw_obligation_collateral(
