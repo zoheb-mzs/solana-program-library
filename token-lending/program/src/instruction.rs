@@ -379,27 +379,6 @@ pub enum LendingInstruction {
         /// Reserve config to update to
         config: ReserveConfig,
     },
-
-    // 17
-    /// Repay borrowed liquidity to a reserve. Requires a refreshed obligation and reserve.
-    ///
-    /// Accounts expected by this instruction:
-    ///
-    ///   0. `[writable]` Source liquidity token account.
-    ///                     Minted by repay reserve liquidity mint.
-    ///                     $authority can transfer $liquidity_amount.
-    ///   1. `[writable]` Destination repay reserve liquidity supply SPL Token account.
-    ///   2. `[writable]` Repay reserve account - refreshed.
-    ///   3. `[writable]` Obligation account - refreshed.
-    ///   4. `[]` Lending market account.
-    ///   5. `[signer]` User transfer authority ($authority).
-    ///   6. `[]` Clock sysvar.
-    ///   7. `[]` Token program id.
-    ///   .. `[]` Liquidity borrow reserve accounts - all, in order.
-    OraclelessRepayObligationLiquidity {
-        /// Amount of liquidity to repay - u64::MAX for 100% of borrowed amount
-        liquidity_amount: u64,
-    },
 }
 
 impl LendingInstruction {
@@ -712,10 +691,6 @@ impl LendingInstruction {
                 buf.extend_from_slice(&config.deposit_limit.to_le_bytes());
                 buf.extend_from_slice(&config.borrow_limit.to_le_bytes());
                 buf.extend_from_slice(&config.fee_receiver.to_bytes());
-            }
-            Self::OraclelessRepayObligationLiquidity { liquidity_amount } => {
-                buf.push(17);
-                buf.extend_from_slice(&liquidity_amount.to_le_bytes());
             }
         }
         buf
@@ -1239,40 +1214,5 @@ pub fn update_reserve_config(
         program_id,
         accounts,
         data: LendingInstruction::UpdateReserveConfig { config }.pack(),
-    }
-}
-
-/// Creates an 'OraclelessRepayObligationLiquidity' instruction.
-#[allow(clippy::too_many_arguments)]
-pub fn oracleless_repay_obligation_liquidity(
-    program_id: Pubkey,
-    liquidity_amount: u64,
-    source_liquidity_pubkey: Pubkey,
-    destination_liquidity_pubkey: Pubkey,
-    repay_reserve_pubkey: Pubkey,
-    obligation_pubkey: Pubkey,
-    lending_market_pubkey: Pubkey,
-    user_transfer_authority_pubkey: Pubkey,
-    reserve_pubkeys: Vec<Pubkey>,
-) -> Instruction {
-    let mut accounts = vec![
-        AccountMeta::new(source_liquidity_pubkey, false),
-        AccountMeta::new(destination_liquidity_pubkey, false),
-        AccountMeta::new(repay_reserve_pubkey, false),
-        AccountMeta::new(obligation_pubkey, false),
-        AccountMeta::new_readonly(lending_market_pubkey, false),
-        AccountMeta::new_readonly(user_transfer_authority_pubkey, true),
-        AccountMeta::new_readonly(sysvar::clock::id(), false),
-        AccountMeta::new_readonly(spl_token::id(), false),
-    ];
-    accounts.extend(
-        reserve_pubkeys
-            .into_iter()
-            .map(|pubkey| AccountMeta::new_readonly(pubkey, false)),
-    );
-    Instruction {
-        program_id,
-        accounts,
-        data: LendingInstruction::OraclelessRepayObligationLiquidity { liquidity_amount }.pack(),
     }
 }

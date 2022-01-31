@@ -10,7 +10,6 @@ use solana_sdk::{
     transaction::Transaction,
 };
 use spl_token::instruction::approve;
-use spl_token_lending::instruction::refresh_obligation;
 use spl_token_lending::{
     instruction::repay_obligation_liquidity, processor::process_instruction,
     state::INITIAL_COLLATERAL_RATIO,
@@ -103,11 +102,6 @@ async fn test_success() {
                 USDC_BORROW_AMOUNT_FRACTIONAL,
             )
             .unwrap(),
-            refresh_obligation(
-                spl_token_lending::id(),
-                test_obligation.pubkey,
-                vec![sol_test_reserve.pubkey, usdc_test_reserve.pubkey],
-            ),
             repay_obligation_liquidity(
                 spl_token_lending::id(),
                 USDC_BORROW_AMOUNT_FRACTIONAL,
